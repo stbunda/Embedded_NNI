@@ -17,6 +17,14 @@ from .runtime.env_vars import dispatcher_env_vars
 from .runtime.log import enable_global_logging, silence_stdout
 from .utils import ClassArgsValidator
 
+from .algorithms import *
+from .common import *
+from .compression import *
+from .contrib import *
+from .experiment import *
+from .runtime import *
+from .tools import *
+
 if dispatcher_env_vars.SDK_PROCESS != 'dispatcher':
     from .trial import *
     from .common.nas_utils import training_update

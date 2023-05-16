@@ -13,14 +13,14 @@ def get_config_directory() -> Path:
     Get NNI config directory.
     Create it if not exist.
     """
-    if os.getenv('NNI_CONFIG_DIR') is not None:
-        config_dir = Path(os.getenv('NNI_CONFIG_DIR'))  # type: ignore
-    elif sys.prefix != sys.base_prefix or Path(sys.prefix, 'conda-meta').is_dir():
-        config_dir = Path(sys.prefix, 'nni')
-    elif sys.platform == 'win32':
-        config_dir = Path(os.environ['APPDATA'], 'nni')
-    else:
-        config_dir = Path.home() / '.config/nni'
+    # if os.getenv('NNI_CONFIG_DIR') is not None:
+    #     config_dir = Path(os.getenv('NNI_CONFIG_DIR'))  # type: ignore
+    # elif sys.prefix != sys.base_prefix or Path(sys.prefix, 'conda-meta').is_dir():
+    #     config_dir = Path(sys.prefix, 'nni')
+    # elif sys.platform == 'win32':
+    #     config_dir = Path(os.environ['APPDATA'], 'nni')
+    # else:
+    config_dir = Path.home() / '.config/nni'
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir
 

@@ -84,7 +84,9 @@ class Experiment:
     def __init__(
         self,
         config_or_platform: ExperimentConfig | str | list[str] | None,
-        id: str | None = None  # pylint: disable=redefined-builtin
+        id: str | None = None,
+        node: str | None = None
+            # pylint: disable=redefined-builtin
     ):
         self.config: ExperimentConfig | None = None
         if id is not None:
@@ -103,6 +105,8 @@ class Experiment:
             self.config = ExperimentConfig(config_or_platform)
         else:
             self.config = config_or_platform
+        if node is not None:
+            self.config.nni_manager_ip = node
 
     def _start_logging(self, debug: bool) -> None:
         assert self.config is not None

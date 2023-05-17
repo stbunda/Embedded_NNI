@@ -97,7 +97,7 @@ class Experiment:
         else:
             self.id = management.generate_experiment_id()
         self.port: int | None = None
-        self.node: str | None = None
+        self.node: node
         self._proc: Popen | psutil.Process | None = None
         self._action: Literal['create', 'resume', 'view'] = 'create'
         self.url_prefix: str | None = None

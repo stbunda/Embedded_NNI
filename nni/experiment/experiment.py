@@ -183,6 +183,7 @@ class Experiment:
                 _logger.warning('Cannot gracefully stop experiment, killing NNI process...')
                 kill_command(self._proc.pid)
 
+        self.node = None
         self.port = None
         self._proc = None
 
@@ -245,7 +246,7 @@ class Experiment:
         """
         return self._run_impl(node, port, wait_completion, debug)
 
-    def run_or_resume(self, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
+    def run_or_resume(self, node: str | None = None, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
         """
         Call :meth:`run` or :meth:`resume` based on the return value of :meth:`has_checkpoint`.
 
@@ -253,10 +254,10 @@ class Experiment:
         """
         if self.has_checkpoint():
             _logger.info('Checkpoint is found. Resume the experiment: %s', self.id)
-            return self.resume(port, wait_completion, debug)
+            return self.resume(node, port, wait_completion, debug)
         else:
             _logger.info('No checkpoint is found. Start a new experiment: %s', self.id)
-            return self.run(port, wait_completion, debug)
+            return self.run(node, port, wait_completion, debug)
 
     def has_checkpoint(self) -> bool:
         """
@@ -314,7 +315,7 @@ class Experiment:
         pass
 
     @classmethod
-    def connect(cls, port: int):
+    def connect(cls, node: str | None, port: int):
         """
         Connect to an existing experiment.
 
@@ -324,6 +325,7 @@ class Experiment:
             The port of web UI.
         """
         experiment = cls(None)
+        experiment.node = node
         experiment.port = port
         experiment.id = experiment.get_experiment_profile().get('id')
         status = experiment.get_status()
@@ -335,7 +337,7 @@ class Experiment:
         _logger.info('Connect to port %d success, experiment id is %s, status is %s.', port, experiment.id, status)
         return experiment
 
-    def resume(self, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
+    def resume(self, node: str | None = None, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
         """
         Resume a stopped experiment.
 
@@ -369,9 +371,9 @@ class Experiment:
 
         self._action = 'resume'
 
-        return self._run_impl(port, wait_completion, debug)
+        return self._run_impl(node, port, wait_completion, debug)
 
-    def view(self, port: int = 8080, non_blocking: bool = False) -> Experiment:
+    def view(self, node: str | None = None, port: int = 8080, non_blocking: bool = False) -> Experiment:
         """
         View a stopped experiment.
 
@@ -400,7 +402,7 @@ class Experiment:
 
         self.load_checkpoint()
 
-        self.start(port=port, debug=False, run_mode=RunMode.Detach)
+        self.start(node=node, port=port, debug=False, run_mode=RunMode.Detach)
         if not non_blocking:
             try:
                 while True:
@@ -420,7 +422,7 @@ class Experiment:
         str
             Experiment status.
         """
-        resp = rest.get(self.port, '/check-status', self.url_prefix)
+        resp = rest.get(self.port, '/check-status', self.url_prefix, self.node)
         return resp['status']
 
     def get_trial_job(self, trial_job_id: str):
@@ -437,7 +439,7 @@ class Experiment:
         TrialJob
             A `TrialJob` instance corresponding to `trial_job_id`.
         """
-        resp = rest.get(self.port, '/trial-jobs/{}'.format(trial_job_id), self.url_prefix)
+        resp = rest.get(self.port, '/trial-jobs/{}'.format(trial_job_id), self.url_prefix, self.node)
         return TrialJob(**resp)
 
     def list_trial_jobs(self):
@@ -449,7 +451,7 @@ class Experiment:
         list
             List of `TrialJob`.
         """
-        resp = rest.get(self.port, '/trial-jobs', self.url_prefix)
+        resp = rest.get(self.port, '/trial-jobs', self.url_prefix, self.node)
         return [TrialJob(**trial_job) for trial_job in resp]
 
     def get_job_statistics(self):
@@ -461,7 +463,7 @@ class Experiment:
         dict
             Job statistics information.
         """
-        resp = rest.get(self.port, '/job-statistics', self.url_prefix)
+        resp = rest.get(self.port, '/job-statistics', self.url_prefix, self.node)
         return resp
 
     def get_job_metrics(self, trial_job_id=None):
@@ -479,7 +481,7 @@ class Experiment:
             Each key is a trialJobId, the corresponding value is a list of `TrialMetricData`.
         """
         api = '/metric-data/{}'.format(trial_job_id) if trial_job_id else '/metric-data'
-        resp = rest.get(self.port, api, self.url_prefix)
+        resp = rest.get(self.port, api, self.url_prefix, self.node)
         metric_dict = {}
         for metric in resp:
             trial_id = metric["trialJobId"]
@@ -498,7 +500,7 @@ class Experiment:
         dict
             The profile of the experiment.
         """
-        resp = rest.get(self.port, '/experiment', self.url_prefix)
+        resp = rest.get(self.port, '/experiment', self.url_prefix, self.node)
         return resp
 
     def get_experiment_metadata(self, exp_id: str):
@@ -525,7 +527,7 @@ class Experiment:
         list
             The experiments metadata.
         """
-        resp = rest.get(self.port, '/experiments-info', self.url_prefix)
+        resp = rest.get(self.port, '/experiments-info', self.url_prefix, self.node)
         return resp
 
     def export_data(self):
@@ -537,7 +539,7 @@ class Experiment:
         list
             List of `TrialResult`.
         """
-        resp = rest.get(self.port, '/export-data', self.url_prefix)
+        resp = rest.get(self.port, '/export-data', self.url_prefix, self.node)
         return [TrialResult(**trial_result) for trial_result in resp]
 
     def _get_query_type(self, key: str):
@@ -564,7 +566,7 @@ class Experiment:
         api = '/experiment{}'.format(self._get_query_type(key))
         experiment_profile = self.get_experiment_profile()
         experiment_profile['params'][key] = value
-        rest.put(self.port, api, experiment_profile, self.url_prefix)
+        rest.put(self.port, api, experiment_profile, self.url_prefix, self.node)
         _logger.info('Successfully update %s.', key)
 
     def update_trial_concurrency(self, value: int):
@@ -623,5 +625,5 @@ class Experiment:
             Trial job id.
 
         """
-        rest.delete(self.port, '/trial-jobs/{}'.format(trial_job_id), self.url_prefix)
+        rest.delete(self.port, '/trial-jobs/{}'.format(trial_job_id), self.url_prefix, self.node)
 

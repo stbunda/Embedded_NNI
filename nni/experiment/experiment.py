@@ -117,7 +117,7 @@ class Experiment:
         log_level = 'debug' if (debug or config.log_level == 'trace') else config.log_level
         start_experiment_logging(self.id, log_file, cast(str, log_level))
 
-    def _start_nni_manager(self, port: int, debug: bool, run_mode: RunMode = RunMode.Background,
+    def _start_nni_manager(self, node: str, port: int, debug: bool, run_mode: RunMode = RunMode.Background,
                            tuner_command_channel: str | None = None,
                            tags: list[str] = []) -> None:
         assert self.config is not None
@@ -129,6 +129,7 @@ class Experiment:
                                                self.url_prefix, tuner_command_channel, tags)
         assert self._proc is not None
 
+        self.node = node
         self.port = port  # port will be None if start up failed
 
         ips = [config.nni_manager_ip]
@@ -142,7 +143,7 @@ class Experiment:
         msg = 'Web portal URLs: ${CYAN}' + ' '.join(ips)
         _logger.info(msg)
 
-    def start(self, port: int = 8080, debug: bool = False, run_mode: RunMode = RunMode.Background) -> None:
+    def start(self, node: str | None = None, port: int = 8080, debug: bool = False, run_mode: RunMode = RunMode.Background) -> None:
         """
         Start the experiment in background.
 
@@ -151,6 +152,8 @@ class Experiment:
 
         Parameters
         ----------
+        node
+            Replaces localhost if not None
         port
             The port of web UI.
         debug
@@ -165,7 +168,7 @@ class Experiment:
             atexit.register(self.stop)
 
         self._start_logging(debug)
-        self._start_nni_manager(port, debug, run_mode, None, [])
+        self._start_nni_manager(node, port, debug, run_mode, None, [])
 
     def _stop_logging(self) -> None:
         stop_experiment_logging(self.id)

@@ -125,7 +125,7 @@ class Experiment:
         if config.use_annotation:
             raise RuntimeError('NNI annotation is not supported by Python experiment API.')
 
-        self._proc = launcher.start_experiment(self._action, self.id, config, self.node, port, debug, run_mode,
+        self._proc = launcher.start_experiment(self._action, self.id, config, node, port, debug, run_mode,
                                                self.url_prefix, tuner_command_channel, tags)
         assert self._proc is not None
 

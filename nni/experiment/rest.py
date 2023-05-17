@@ -15,16 +15,24 @@ _logger = logging.getLogger(__name__)
 
 timeout = 20
 
-def request(method: str, port: Optional[int], api: str, data: Any = None, prefix: Optional[str] = None) -> Any:
+def request(method: str, port: Optional[int], api: str, data: Any = None, prefix: Optional[str] = None, node: Optional[str] = None) -> Any:
     if port is None:
         raise RuntimeError('Experiment is not running')
 
-    url_parts = [
-        f'http://localhost:{port}',
-        prefix,
-        'api/v1/nni',
-        api
-    ]
+    if node is not None:
+        url_parts = [
+            f'http://{node}.ewi.utwente.nl:{port}',
+            prefix,
+            'api/v1/nni',
+            api
+        ]
+    else:
+        url_parts = [
+            f'http://localhost:{port}',
+            prefix,
+            'api/v1/nni',
+            api
+        ]
     url = '/'.join(part.strip('/') for part in url_parts if part)
 
     if data is None:
@@ -39,14 +47,14 @@ def request(method: str, port: Optional[int], api: str, data: Any = None, prefix
     if method.lower() in ['get', 'post'] and len(resp.content) > 0:
         return resp.json()
 
-def get(port: Optional[int], api: str, prefix: Optional[str] = None) -> Any:
-    return request('get', port, api, prefix=prefix)
+def get(port: Optional[int], api: str, prefix: Optional[str] = None, node: Optional[str] = None) -> Any:
+    return request('get', port, api, prefix=prefix, node=node)
 
-def post(port: Optional[int], api: str, data: Any, prefix: Optional[str] = None) -> Any:
-    return request('post', port, api, data, prefix=prefix)
+def post(port: Optional[int], api: str, data: Any, prefix: Optional[str] = None, node: Optional[str] = None) -> Any:
+    return request('post', port, api, data, prefix=prefix, node=node)
 
-def put(port: Optional[int], api: str, data: Any, prefix: Optional[str] = None) -> None:
-    request('put', port, api, data, prefix=prefix)
+def put(port: Optional[int], api: str, data: Any, prefix: Optional[str] = None, node: Optional[str] = None) -> None:
+    request('put', port, api, data, prefix=prefix, node=node)
 
-def delete(port: Optional[int], api: str, prefix: Optional[str] = None) -> None:
-    request('delete', port, api, prefix=prefix)
+def delete(port: Optional[int], api: str, prefix: Optional[str] = None, node: Optional[str] = None) -> None:
+    request('delete', port, api, prefix=prefix, node=node)

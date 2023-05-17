@@ -97,6 +97,7 @@ class Experiment:
         else:
             self.id = management.generate_experiment_id()
         self.port: int | None = None
+        self.node: str | None = None
         self._proc: Popen | psutil.Process | None = None
         self._action: Literal['create', 'resume', 'view'] = 'create'
         self.url_prefix: str | None = None
@@ -105,8 +106,6 @@ class Experiment:
             self.config = ExperimentConfig(config_or_platform)
         else:
             self.config = config_or_platform
-        if node is not None:
-            self.config.nni_manager_ip = node
 
     def _start_logging(self, debug: bool) -> None:
         assert self.config is not None
@@ -126,13 +125,15 @@ class Experiment:
         if config.use_annotation:
             raise RuntimeError('NNI annotation is not supported by Python experiment API.')
 
-        self._proc = launcher.start_experiment(self._action, self.id, config, port, debug, run_mode,
+        self._proc = launcher.start_experiment(self._action, self.id, config, self.node, port, debug, run_mode,
                                                self.url_prefix, tuner_command_channel, tags)
         assert self._proc is not None
 
         self.port = port  # port will be None if start up failed
 
         ips = [config.nni_manager_ip]
+        if self.node is not None:
+            ips.append(self.node)
         for interfaces in psutil.net_if_addrs().values():
             for interface in interfaces:
                 if interface.family == socket.AF_INET:

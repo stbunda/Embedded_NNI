@@ -46,11 +46,13 @@ class NniManagerArgs:
             action: Literal['create', 'resume', 'view'],
             exp_id: str,
             config: ExperimentConfig,
+            node: str,
             port: int,
             debug: bool,
             foreground: bool,
             url_prefix: str | None,
             tuner_command_channel: str | None):
+        self.node = node
         self.port = port
         self.experiment_id = exp_id
         self.action = action
@@ -89,6 +91,7 @@ def start_experiment(
         action: Literal['create', 'resume', 'view'],
         exp_id: str,
         config: ExperimentConfig,
+        node: str,
         port: int,
         debug: bool,
         run_mode: RunMode,
@@ -99,12 +102,12 @@ def start_experiment(
     foreground = run_mode.value == 'foreground'
     if url_prefix is not None:
         url_prefix = url_prefix.strip('/')
-    nni_manager_args = NniManagerArgs(action, exp_id, config, port, debug, foreground, url_prefix, tuner_command_channel)
+    nni_manager_args = NniManagerArgs(action, exp_id, config, node, port, debug, foreground, url_prefix, tuner_command_channel)
 
-    _ensure_port_idle(port)
+    _ensure_port_idle(node, port)
     websocket_platforms = ['hybrid', 'remote', 'openpai', 'kubeflow', 'frameworkcontroller', 'adl']
     if action != 'view' and nni_manager_args.mode in websocket_platforms:
-        _ensure_port_idle(port + 1, f'{nni_manager_args.mode} requires an additional port')
+        _ensure_port_idle(node, port + 1, f'{nni_manager_args.mode} requires an additional port')
 
     link = Path(config.experiment_working_directory, '_latest')
     try:
@@ -122,7 +125,7 @@ def start_experiment(
         start_time = int(time.time() * 1000)
 
         _logger.info('Starting web server...')
-        _check_rest_server(port, url_prefix=url_prefix)
+        _check_rest_server(node, port, url_prefix=url_prefix)
 
         Experiments().add_experiment(
             exp_id,
@@ -137,7 +140,7 @@ def start_experiment(
         )
 
         _logger.info('Setting up...')
-        rest.post(port, '/experiment', config.json(), url_prefix)
+        rest.post(port, '/experiment', config.json(), url_prefix, node)
 
     except Exception as e:
         _logger.error('Create experiment failed: %s', e)
@@ -182,23 +185,28 @@ def _start_rest_server(nni_manager_args: NniManagerArgs, run_mode: RunMode) -> P
         return Popen(cmd, stdout=out, stderr=err, cwd=node_dir, preexec_fn=os.setpgrp)  # type: ignore
 
 
-def _ensure_port_idle(port: int, message: str | None = None) -> None:
+def _ensure_port_idle(node: str, port: int, message: str | None = None) -> None:
     sock = socket.socket()
-    if sock.connect_ex(('localhost', port)) == 0:
+    if node is not None:
+        if sock.connect_ex((f'{node}.ewi.utwente.nl', port)) == 0:
+            sock.close()
+            message = f'(message)' if message else ''
+            raise RuntimeError(f'Port {port} is not idle {message}')
+    elif sock.connect_ex(('localhost', port)) == 0:
         sock.close()
         message = f'(message)' if message else ''
         raise RuntimeError(f'Port {port} is not idle {message}')
 
 
-def _check_rest_server(port: int, retry: int = 3, url_prefix: str | None = None) -> None:
+def _check_rest_server(node: str, port: int, retry: int = 3, url_prefix: str | None = None) -> None:
     for i in range(retry):
         with contextlib.suppress(Exception):
-            rest.get(port, '/check-status', url_prefix)
+            rest.get(port, '/check-status', url_prefix, node)
             return
         if i > 0:
             _logger.warning('Timeout, retry...')
         time.sleep(1)
-    rest.get(port, '/check-status', url_prefix)
+    rest.get(port, '/check-status', url_prefix, node)
 
 
 def _save_experiment_information(experiment_id: str, port: int, start_time: int, platform: str,

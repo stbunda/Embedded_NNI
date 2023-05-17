@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+import sys, os
+sys.path.append(os.getcwd())
 
 from __future__ import annotations
 

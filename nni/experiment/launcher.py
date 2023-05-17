@@ -125,7 +125,7 @@ def start_experiment(
         start_time = int(time.time() * 1000)
 
         _logger.info('Starting web server...')
-        _check_rest_server(node, port, url_prefix=url_prefix)
+        _check_rest_server(node=node, port=port, url_prefix=url_prefix)
 
         Experiments().add_experiment(
             exp_id,
@@ -202,12 +202,12 @@ def _ensure_port_idle(node: str, port: int, message: str | None = None) -> None:
 def _check_rest_server(node: str, port: int, retry: int = 3, url_prefix: str | None = None) -> None:
     for i in range(retry):
         with contextlib.suppress(Exception):
-            rest.get(port, '/check-status', url_prefix, node)
+            rest.get(port, '/check-status', url_prefix, node=node)
             return
         if i > 0:
             _logger.warning('Timeout, retry...')
         time.sleep(1)
-    rest.get(port, '/check-status', url_prefix, node)
+    rest.get(port, '/check-status', url_prefix, node=node)
 
 
 def _save_experiment_information(experiment_id: str, port: int, start_time: int, platform: str,

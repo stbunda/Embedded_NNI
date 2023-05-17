@@ -38,9 +38,11 @@ def request(method: str, port: Optional[int], api: str, data: Any = None, prefix
     print(url)
 
     if data is None:
+        print('data is None')
         resp = requests.request(method, url, timeout=timeout)
     else:
         resp = requests.request(method, url, json=data, timeout=timeout)
+        print('resp', resp)
 
     if not resp.ok:
         _logger.error('rest request %s %s failed: %s %s', method.upper(), url, resp.status_code, resp.text)

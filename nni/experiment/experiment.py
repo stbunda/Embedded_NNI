@@ -97,7 +97,7 @@ class Experiment:
         else:
             self.id = management.generate_experiment_id()
         self.port: int | None = None
-        self.node = node
+        self.node: str | None = None
         self._proc: Popen | psutil.Process | None = None
         self._action: Literal['create', 'resume', 'view'] = 'create'
         self.url_prefix: str | None = None
@@ -153,7 +153,7 @@ class Experiment:
         Parameters
         ----------
         node
-            Replaces localhost if not None
+            ip address if not localhost
         port
             The port of web UI.
         debug
@@ -176,7 +176,7 @@ class Experiment:
     def _stop_nni_manager(self) -> None:
         if self._proc is not None:
             try:
-                rest.delete(self.port, '/experiment', self.url_prefix)
+                rest.delete(self.port, '/experiment', self.url_prefix, self.node)
                 self._proc.wait()
             except Exception as e:
                 _logger.exception(e)
@@ -208,9 +208,9 @@ class Experiment:
                 return False
             time.sleep(10)
 
-    def _run_impl(self, port: int, wait_completion: bool, debug: bool) -> bool | None:
+    def _run_impl(self, node: str | None, port: int, wait_completion: bool, debug: bool) -> bool | None:
         try:
-            self.start(self.node, port, debug)
+            self.start(node, port, debug)
             if wait_completion:
                 return self._wait_completion()
         except KeyboardInterrupt:
@@ -219,7 +219,7 @@ class Experiment:
         # NOTE: stop is not called if wait is successful without interrupt.
         return None
 
-    def run(self, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
+    def run(self, node: str | None = None, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
         """
         Run the experiment.
 
@@ -229,6 +229,8 @@ class Experiment:
 
         Parameters
         ----------
+        node
+            ip address if not localhost
         port
             The port on which NNI manager will run. It will also be the port of web portal.
         wait_completion
@@ -241,7 +243,7 @@ class Experiment:
         If ``wait_completion`` is ``False``, this function will non-block and return None immediately.
         Otherwise, return ``True`` when experiment done; or return ``False`` when experiment failed.
         """
-        return self._run_impl(port, wait_completion, debug)
+        return self._run_impl(node, port, wait_completion, debug)
 
     def run_or_resume(self, port: int = 8080, wait_completion: bool = True, debug: bool = False) -> bool | None:
         """

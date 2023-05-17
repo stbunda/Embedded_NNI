@@ -13,7 +13,7 @@ import requests
 
 _logger = logging.getLogger(__name__)
 
-timeout = 20
+timeout = 200
 
 def request(method: str, port: Optional[int], api: str, data: Any = None, prefix: Optional[str] = None, node: Optional[str] = None) -> Any:
     if port is None:

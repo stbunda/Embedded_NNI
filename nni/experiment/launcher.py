@@ -187,16 +187,16 @@ def _start_rest_server(nni_manager_args: NniManagerArgs, run_mode: RunMode) -> P
 
 def _ensure_port_idle(node: str, port: int, message: str | None = None) -> None:
     sock = socket.socket()
-    # if node is not None:
-    #     print(sock.connect_ex((node, port)))
-    #     if sock.connect_ex((node, port)) == 0:
-    #         sock.close()
-    #         message = f'(message)' if message else ''
-    #         raise RuntimeError(f'Port {port} is not idle {message}')
-    if sock.connect_ex(('localhost', port)) == 0:
-        sock.close()
-        message = f'(message)' if message else ''
-        raise RuntimeError(f'Port {port} is not idle {message}')
+    if node is not None:
+        #     print(sock.connect_ex((node, port)))
+        #     if sock.connect_ex((node, port)) == 0:
+        #         sock.close()
+        #         message = f'(message)' if message else ''
+        #         raise RuntimeError(f'Port {port} is not idle {message}')
+        if sock.connect_ex(('localhost', port)) == 0:
+            sock.close()
+            message = f'(message)' if message else ''
+            raise RuntimeError(f'Port {port} is not idle {message}')
 
 
 def _check_rest_server(node: str, port: int, retry: int = 3, url_prefix: str | None = None) -> None:

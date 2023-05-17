@@ -34,6 +34,7 @@ def request(method: str, port: Optional[int], api: str, data: Any = None, prefix
             api
         ]
     url = '/'.join(part.strip('/') for part in url_parts if part)
+    print(url)
 
     if data is None:
         resp = requests.request(method, url, timeout=timeout)

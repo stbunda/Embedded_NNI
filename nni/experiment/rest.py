@@ -21,7 +21,7 @@ def request(method: str, port: Optional[int], api: str, data: Any = None, prefix
 
     if node is not None:
         url_parts = [
-            f'http://{node}.ewi.utwente.nl:{port}',
+            f'http://{node}:{port}',
             prefix,
             'api/v1/nni',
             api

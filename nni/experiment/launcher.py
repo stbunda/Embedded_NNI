@@ -188,7 +188,7 @@ def _start_rest_server(nni_manager_args: NniManagerArgs, run_mode: RunMode) -> P
 def _ensure_port_idle(node: str, port: int, message: str | None = None) -> None:
     sock = socket.socket()
     if node is not None:
-        if sock.connect_ex((f'{node}.ewi.utwente.nl', port)) == 0:
+        if sock.connect_ex((node, port)) == 0:
             sock.close()
             message = f'(message)' if message else ''
             raise RuntimeError(f'Port {port} is not idle {message}')

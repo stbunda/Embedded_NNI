@@ -18,6 +18,7 @@ timeout = 20
 def request(method: str, port: Optional[int], api: str, data: Any = None, prefix: Optional[str] = None, node: Optional[str] = None) -> Any:
     if port is None:
         raise RuntimeError('Experiment is not running')
+    print('node:', node)
 
     if node is not None:
         url_parts = [
